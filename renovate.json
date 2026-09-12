@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "enabled": true,
+  "baseBranch": "main",
+  "labels": ["renovate", "dependencies"],
+  "dependencyDashboard": true,
+  "rangeStrategy": "pin",
+  "prConcurrentLimit": 5,
+  "branchConcurrentLimit": 5,
+  "platformAutomerge": false,
+  "automerge": false,
+  "requireApproval": true,
+  "ignoreDeps": [],
+  "packageRules": [
+    {
+      "description": "GitHub Actions: let Dependabot own these (see .github/dependabot.yml) to avoid duplicate PRs. Renovate ignores the ecosystem.",
+      "matchManagers": ["github-actions"],
+      "enabled": false
+    },
+    {
+      "description": "Node (server.js) -- only matters if you opt into the optional Node backend. Group minor/patch, keep majors separate.",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm (minor/patch)",
+      "automerge": false
+    },
+    {
+      "description": "Python tooling (PyYAML, etc.) -- opt in if you add a requirements.txt. Disabled while the project is stdlib-only.",
+      "matchManagers": ["pip_requirements", "pip_setup", "poetry"],
+      "enabled": false
+    }
+  ]
+}

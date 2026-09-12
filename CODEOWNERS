@@ -1,0 +1,77 @@
+# CODEOWNERS — automatic review requests on pull requests
+#
+# Syntax:  <pattern>  <@owner1> <@owner2> ...
+# A matching PR triggers a review request from the listed owners before merge.
+# More specific rules (lower down) override broader rules above.
+#
+# Placeholder owners: replace @HamUniversal, @HamUniversal, and
+# @HamUniversal with real GitHub handles before pushing.
+# - @HamUniversal       : the sole maintainer / repo admin
+# - @HamUniversal    : a team or user responsible for security review
+#                              (create as a GitHub team, or use a single handle)
+# - @HamUniversal : broader group for docs, content, i18n
+#
+# IMPORTANT: CODEOWNERS has no effect until these placeholders are real handles
+# AND the file is on the default branch (main). Update both sides together.
+
+# ============================================================================
+# 1. SECURITY-SENSITIVE PATHS  — require security-team approval
+# ============================================================================
+
+# Secrets, environment config, and anything that touches API keys.
+# config.js is gitignored in normal use (config.example.js is the template),
+# but if it ever appears in a PR, it MUST be reviewed.
+config.js                               @HamUniversal
+config.example.js                       @HamUniversal
+*.env                                   @HamUniversal
+.env.*                                  @HamUniversal
+**/secrets/**                           @HamUniversal
+
+# Deployment credentials, hosting config, DNS, redirects.
+netlify.toml                            @HamUniversal
+vercel.json                             @HamUniversal
+_redirects                              @HamUniversal
+_dnslink                                @HamUniversal
+
+# GitHub Actions workflows and release automation — supply-chain risk.
+.github/                                @HamUniversal
+.github/workflows/                      @HamUniversal
+.github/actions/                        @HamUniversal
+
+# Optional Node.js backend: email capture, fulfilment, API endpoints.
+server.js                               @HamUniversal
+package.json                            @HamUniversal
+package-lock.json                       @HamUniversal
+
+# ============================================================================
+# 2. BACKEND & INTEGRATION LOGIC  — require maintainer approval
+# ============================================================================
+
+serve.py                                @HamUniversal
+build.py                                @HamUniversal
+pack.py                                 @HamUniversal
+pack_now.py                             @HamUniversal
+test_backend.py                         @HamUniversal
+
+# ============================================================================
+# 3. CONTENT & DOCUMENTATION  — broader review
+# ============================================================================
+
+*.md                                    @HamUniversal
+docs/                                   @HamUniversal
+LAUNCH.txt                              @HamUniversal
+DELIVERABLES.txt                        @HamUniversal
+
+# The actual site (HTML/CSS/JS) — content changes reviewed by maintainers.
+index.html                              @HamUniversal
+updated.html                            @HamUniversal
+source-original.html                    @HamUniversal
+js/                                     @HamUniversal
+css/                                    @HamUniversal
+assets/                                 @HamUniversal
+
+# ============================================================================
+# 4. EVERYTHING ELSE  — falls through to the repo owner
+# ============================================================================
+
+*                                       @HamUniversal

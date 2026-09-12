@@ -1,0 +1,119 @@
+═══════════════════════════════════════════════════════════════
+  Pin Phonics — Final Deliverables
+  Generated: 2026-09-12
+═══════════════════════════════════════════════════════════════
+
+TWO files to download. That's it.
+
+
+───────────────────────────────────────────────────────────────
+ 📦 1. pinphonics-site-deploy.zip  (27 MB)
+───────────────────────────────────────────────────────────────
+  The LIVE SITE. Unzip → drag to app.netlify.com/drop → instant HTTPS.
+
+  SHA-256:
+  fc9510914a58e3887e4de9e1a634096ea39854174b8f0dc069f881b1c23642a2
+
+  Contents (6 files):
+    index.html            ← the whole site (single self-contained file)
+    source-original.html  ← editable source (updated.html)
+    200.html              ← SPA fallback (copy of index.html)
+    _redirects            ← routing rules
+    netlify.toml          ← Netlify config (auto-detected)
+    vercel.json           ← Vercel config (auto-detected)
+
+  How to deploy:
+    ① Unzip this folder
+    ② Go to app.netlify.com/drop
+    ③ Drag the folder in
+    ④ You have a live HTTPS URL in ~60 seconds
+
+  Full walkthrough inside the zip:  LAUNCH.txt
+
+
+───────────────────────────────────────────────────────────────
+ 📦 2. pinphonics-complete.zip  (8.9 MB)
+───────────────────────────────────────────────────────────────
+  THE WHOLE PROJECT. Source + every guide + build/test tooling.
+  Use this to make changes, then re-run the build.
+
+  SHA-256:
+  daee8d339709cfe9f173febe5e2a5bb17c9ce6dd34f0504262b9719fb7c77f7a
+
+  Top-level layout:
+    updated.html              ← YOUR SOURCE. Edit this.
+    build.py                  ← Builds pinphonics-site/index.html
+    serve.py                  ← Dev server (GET /, /config.js, /api/*)
+    server.js                 ← Optional Node backend (Mailchimp + Gumroad)
+    validate_config.py        ← Catches config typos at build time
+    final_check.py            ← Full e2e: build → server → endpoints → bundle
+    test_backend.py           ← 14-assertion unit suite
+    pack_site.py / pack.py    ← Create the two deliverable zips
+    clean_tree.py             ← Reset to a clean state
+    finish.sh                 ← ONE COMMAND: bash finish.sh
+    setup.sh                  ← First-time environment setup
+    status.py                 ← Instant project health check
+    config.example.js         ← Template (committed). Copy → config.js
+    config.js                 ← Real keys (GITIGNORED — never commit)
+    package.json              ← npm scripts: build / test / check / finish
+    .github/workflows/ci.yml  ← GitHub Actions: build + test on push
+    .gitignore
+    README.md                 ← Start here for project overview
+    REDEPLOY.md               ← 4-step launch walkthrough
+    PROJECT_MAP.md            ← File-by-file architecture
+    BACKEND_INTEGRATION.md    ← Mailchimp + Gumroad + Stripe
+    GITHUB_QUICKSTART.md      ← CI/CD deep dive
+    DEPLOY_AND_DOMAIN_GUIDE.md
+    Pin_Domain_Name_Recommendation.md
+    DELIVERABLES.txt          ← this file
+
+
+═══════════════════════════════════════════════════════════════
+  ONE-COMMAND WORKFLOW (after making changes)
+═══════════════════════════════════════════════════════════════
+
+    edit updated.html
+    bash finish.sh            # clean → build → test → pack (all 38 checks)
+    git push                  # auto-deploys via GitHub Actions → live in ~1 min
+
+  finish.sh runs:
+    1. clean_tree.py       — reset to known-good state
+    2. validate_config.py  — catch typos before deploy
+    3. build.py            — produce pinphonics-site/index.html
+    4. final_check.py      — 38-assertion e2e verification
+    5. pack_site.py        — → pinphonics-site-deploy.zip
+    6. pack.py             — → pinphonics-complete.zip
+
+
+═══════════════════════════════════════════════════════════════
+  WHAT'S ALREADY DONE ✅
+═══════════════════════════════════════════════════════════════
+    ✅ Production site built & validated (14 SVGs, green CTA, Aesop hook)
+    ✅ Dev server (serve.py) — GET /, /config.js, /api/config, POST /api/signup
+    ✅ Backend wired — Mailchimp (email) + Gumroad/Stripe (payments)
+    ✅ config.js gitignored (real keys never exposed)
+    ✅ Safe demo fallback (site works without backend keys)
+    ✅ Build-time config validation
+    ✅ GitHub Actions CI (.github/workflows/ci.yml)
+    ✅ 38/38 verification checks passing
+    ✅ Port-fallback (4173→4177 if busy)
+    ✅ Two deploy zips packed & verified
+
+
+═══════════════════════════════════════════════════════════════
+  YOUR NEXT MOVE
+═══════════════════════════════════════════════════════════════
+
+  1. Download  pinphonics-site-deploy.zip
+  2. Unzip it
+  3. Go to  app.netlify.com/drop   (takes 60 seconds, free)
+  4. Drag the folder in
+  5. Register pinphonics.com (~$12/yr) and point DNS at Netlify
+  6. Visit https://pinphonics.com  🎉
+
+  Optional: fill config.js with Mailchimp + Gumroad keys to activate
+  email capture and handbook sales. Until then, the site works perfectly
+  in demo mode (emails log to console).
+
+  Total to go live: ~$12.  Hosting = $0 forever.
+═══════════════════════════════════════════════════════════════

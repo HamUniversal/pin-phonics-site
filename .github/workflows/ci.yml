@@ -1,0 +1,144 @@
+name: CI/CD - Pin Phonics
+
+# ---------------------------------------------------------------------------
+#  Auto-deploy pipeline for https://pinphonics.com
+#
+#  Flow on every push to main:
+#    1. Build the production bundle (build.py -> pinphonics-site/index.html)
+#    2. Run the full verification suite (final_check.py = 38 assertions)
+#    3. Upload the bundle as a build artifact (always, even if deploy fails)
+#    4. Deploy to Netlify (primary), or fall back to GitHub Pages if no secrets
+#
+#  Result:  edit updated.html -> git push -> live site updates in ~1 minute.
+# ---------------------------------------------------------------------------
+
+"on":
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:        # allows manual re-runs from the Actions tab
+
+permissions:
+  contents: read
+  pages: write              # only used by the Pages fallback job
+  id-token: write
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # ------------------------- 1. BUILD + TEST ------------------------------
+  build-and-test:
+    runs-on: ubuntu-latest
+    outputs:
+      bundle-sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build site (build.py)
+        run: python3 build.py
+
+      - name: Full verification suite (38 checks)
+        run: python3 final_check.py
+
+      - name: Smoke-test the dev server
+        run: |
+          python3 serve.py >/tmp/srv.log 2>&1 &
+          sleep 3
+          curl -s -o /dev/null -w "GET /          -> %{http_code}\n" http://127.0.0.1:4173/
+          curl -s -o /dev/null -w "GET /config.js -> %{http_code}\n" http://127.0.0.1:4173/config.js
+          curl -s -X POST http://127.0.0.1:4173/api/signup \
+            -H "Content-Type: application/json" \
+            -d '{"email":"ci@example.com","tags":["ci"]}' \
+            -w "\nPOST /api/signup -> %{http_code}\n"
+          pkill -f serve.py || true
+
+      - name: Record bundle SHA
+        id: sha
+        run: echo "sha=$(sha256sum pinphonics-site/index.html | cut -c1-16)" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinphonics-site
+          path: pinphonics-site/
+          retention-days: 30
+
+  # -------------------- 2a. DEPLOY -> NETLIFY (primary) --------------------
+  deploy-netlify:
+    needs: build-and-test
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pinphonics-site
+          path: pinphonics-site
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: ./pinphonics-site
+          production-branch: main
+          deploy-message: "ci: ${{ needs.build-and-test.outputs.bundle-sha }}"
+          enable-pull-request-comment: false
+          overwrites-pull-request-comment: false
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID:     ${{ secrets.NETLIFY_SITE_ID }}
+
+  # ------------------ 2b. DEPLOY -> GITHUB PAGES (fallback) ---------------
+  #  Activates automatically when the Netlify secrets are NOT set, so the repo
+  #  still gets a live URL out of the box (https://<user>.github.io/<repo>/).
+  deploy-pages:
+    needs: build-and-test
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      (secrets.NETLIFY_AUTH_TOKEN == '' || secrets.NETLIFY_SITE_ID == '')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pinphonics-site
+          path: pinphonics-site
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pinphonics-site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # ----------------------------- 3. SUMMARY -------------------------------
+  report:
+    needs: [build-and-test, deploy-netlify, deploy-pages]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Bundle SHA: ${{ needs.build-and-test.outputs.bundle-sha }}"
+          echo "Netlify:  ${{ needs.deploy-netlify.result || 'skipped' }}"
+          echo "Pages:    ${{ needs.deploy-pages.result || 'skipped' }}"

@@ -1,0 +1,38 @@
+# .gitattributes
+# Force executable permissions (+x) on setup-github.sh for every clone/platform.
+# This prevents "permission denied" errors Mac/Linux users hit after pulling.
+# Windows ignores the executable bit (it uses file extensions), so this is harmless there.
+
+setup-github.sh     eol=lf    -text    mode=0755
+init-repo.sh        eol=lf    -text    mode=0755
+finish.sh           eol=lf    -text    mode=0755
+build.py            eol=lf    -text    mode=0755
+serve.py            eol=lf    -text    mode=0755
+pack.py             eol=lf    -text    mode=0755
+validate_*.py       eol=lf    -text    mode=0755
+test_*.sh           eol=lf    -text    mode=0755
+*.sh                eol=lf    -text    mode=0755
+
+# Text files: normalize line endings to LF on checkout, CRLF on commit (cross-platform safety)
+*.md                text eol=lf
+*.txt               text eol=lf
+*.html              text eol=lf
+*.css               text eol=lf
+*.js                text eol=lf
+*.json              text eol=lf
+*.yml               text eol=lf
+*.yaml              text eol=lf
+*.py                text eol=lf
+*.csv               text eol=lf
+
+# Binary assets: do not touch (no line-ending conversion, no executable bit)
+*.png               binary
+*.jpg               binary
+*.jpeg              binary
+*.gif               binary
+*.svg               binary
+*.ico               binary
+*.woff              binary
+*.woff2             binary
+*.zip               binary
+*.pdf               binary

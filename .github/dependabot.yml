@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # Keep GitHub Actions action versions up to date (nwtgck/actions-netlify,
+  # actions/checkout, actions/setup-python, actions/upload-artifact, etc.)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      # Weekly on Monday at 09:00 UTC -- quiet enough to review, frequent
+      # enough that a breaking release gets caught before it spreads.
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    # Group all action bumps into a single PR so a workflow change reviews once,
+    # not once per action. Set to `false` if you prefer one-PR-per-action.
+    groups:
+      actions:
+        patterns: ["*"]
+    # Open PRs immediately (no mass hold). CI must pass before merge.
+    open-pull-requests-limit: 10
+    # Rebase automatically when the base branch changes -- keeps PRs mergeable.
+    rebase-strategy: "auto"
+
+  # Pinned manifest (package.json) -- opt in only if you enable server.js /
+  # Node-based backend later. Left at monthly so it stays out of the way.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"

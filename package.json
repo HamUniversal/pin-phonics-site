@@ -1,0 +1,26 @@
+{
+  "name": "pin-phonics-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pin Phonics — static marketing + handbook sales site (Netlify/Vercel ready)",
+  "scripts": {
+    "build": "python3 build.py",
+    "test": "python3 test_backend.py",
+    "check": "python3 final_check.py",
+    "serve": "python3 serve.py",
+    "finish": "bash finish.sh",
+    "status": "python3 status.py",
+    "clean": "python3 cleanup.py",
+    "setup": "bash setup.sh",
+    "start": "python3 serve.py"
+  },
+  "optionalDependencies": {
+    "express": "^4.19.2",
+    "mailchimp-api-v3": "^1.14.0",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
