@@ -1,3 +1,15 @@
+# ============================================================================
+#  PASTE THIS ENTIRE FILE into .github/workflows/ci.yml on GitHub
+#  (replaces the broken version that causes "Unrecognized named-value: 'secrets'")
+# ============================================================================
+#  What changed:  the deploy jobs used to reference `secrets.NETLIFY_*`
+#  inside their `if:` condition. GitHub Actions rejects that with
+#    "Unrecognized named-value: 'secrets'"
+#  The fix moves the secret check into a `run:` step (allowed) and exposes
+#  the result via a job output `netlify-configured`. Both deploy jobs now
+#  gate on that output in `if:` (legal). Behaviour is identical.
+# ============================================================================
+
 name: CI/CD - Pin Phonics
 
 # ---------------------------------------------------------------------------
@@ -10,6 +22,15 @@ name: CI/CD - Pin Phonics
 #    4. Deploy to Netlify (primary), or fall back to GitHub Pages if no secrets
 #
 #  Result:  edit updated.html -> git push -> live site updates in ~1 minute.
+#
+#  IMPORTANT — secret availability in conditionals:
+#  GitHub Actions does NOT allow the `secrets` context inside `if:` expressions
+#  (only github / vars / inputs / matrix / needs are permitted). Referencing
+#  `secrets.*` in `if:` fails workflow parsing with:
+#      "Unrecognized named-value: 'secrets'"
+#  Therefore we check secret values inside a `run:` step (allowed) and expose
+#  the result via a job output (`netlify-configured`), which the deploy jobs
+#  then reference in their `if:` via `needs.build-and-test.outputs.*`.
 # ---------------------------------------------------------------------------
 
 "on":
@@ -33,6 +54,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       bundle-sha: ${{ steps.sha.outputs.sha }}
+      # `true` if BOTH NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID are set;
+      # `false` otherwise. Consumed by the two deploy jobs' `if:` guards.
+      # IMPORTANT: this is set inside a `run:` step (allowed), never in `if:`.
+      netlify-configured: ${{ steps.check-secrets.outputs.configured }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +84,18 @@ jobs:
             -w "\nPOST /api/signup -> %{http_code}\n"
           pkill -f serve.py || true
 
+      - name: Detect whether Netlify secrets are configured
+        id: check-secrets
+        run: |
+          # Secrets are referenced HERE, inside `run:` — this is allowed.
+          # Referencing them inside the job's `if:` is what triggers
+          # "Unrecognized named-value: 'secrets'".
+          if [ -n "${{ secrets.NETLIFY_AUTH_TOKEN }}" ] && [ -n "${{ secrets.NETLIFY_SITE_ID }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Record bundle SHA
         id: sha
         run: echo "sha=$(sha256sum pinphonics-site/index.html | cut -c1-16)" >> $GITHUB_OUTPUT
@@ -71,11 +108,14 @@ jobs:
           retention-days: 30
 
   # -------------------- 2a. DEPLOY -> NETLIFY (primary) --------------------
+  #  Runs only when BOTH Netlify secrets are set (netlify-configured == 'true').
+  #  Gated on a job OUTPUT (legal in `if:`), NOT on `secrets.*` (illegal).
   deploy-netlify:
     needs: build-and-test
     if: |
       github.event_name == 'push' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      needs.build-and-test.outputs.netlify-configured == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -101,12 +141,13 @@ jobs:
   # ------------------ 2b. DEPLOY -> GITHUB PAGES (fallback) ---------------
   #  Activates automatically when the Netlify secrets are NOT set, so the repo
   #  still gets a live URL out of the box (https://<user>.github.io/<repo>/).
+  #  Gated on `netlify-configured == 'false'` (a job output — legal in `if:`).
   deploy-pages:
     needs: build-and-test
     if: |
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
-      (secrets.NETLIFY_AUTH_TOKEN == '' || secrets.NETLIFY_SITE_ID == '')
+      needs.build-and-test.outputs.netlify-configured == 'false'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -140,5 +181,6 @@ jobs:
     steps:
       - run: |
           echo "Bundle SHA: ${{ needs.build-and-test.outputs.bundle-sha }}"
+          echo "Netlify configured: ${{ needs.build-and-test.outputs.netlify-configured }}"
           echo "Netlify:  ${{ needs.deploy-netlify.result || 'skipped' }}"
           echo "Pages:    ${{ needs.deploy-pages.result || 'skipped' }}"
